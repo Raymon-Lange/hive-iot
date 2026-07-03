@@ -55,6 +55,7 @@ React Dashboard
   Device           ESP8266
   Firmware         PlatformIO + Arduino
   Sensor           DHT22 (or simulated)
+  Display          OLED (U8g2)
   MQTT             Eclipse Mosquitto
   API              FastAPI
   Database         SQLite
@@ -101,6 +102,7 @@ hive-iot/
 -   RSSI
 -   Uptime
 -   Firmware version
+-   Onboard OLED display of device status
 
 ## Epic 3 -- MQTT
 

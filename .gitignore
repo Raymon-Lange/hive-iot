@@ -1,0 +1,35 @@
+# Python venv (root-level stray venv only — anchored so it doesn't
+# swallow same-named dirs like firmware/thermostat/lib and /include)
+/bin/
+/include/
+/lib/
+/lib64
+/pyvenv.cfg
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / React dashboard
+node_modules/
+dist/
+build/
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Secrets — never commit real device certs/keys
+certificates/*.pem
+certificates/*.key
+certificates/*.crt
+!certificates/README.md
+
+# Docs kept local only, not in the repo
+/docs/

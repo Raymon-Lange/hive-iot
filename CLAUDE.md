@@ -49,6 +49,7 @@ React Dashboard
 | Device          | ESP8266               |
 | Firmware        | PlatformIO + Arduino  |
 | Sensor          | DHT22 (or simulated)  |
+| Display         | OLED (U8g2)           |
 | MQTT            | Eclipse Mosquitto     |
 | API             | FastAPI                |
 | Database        | SQLite                 |
@@ -80,7 +81,7 @@ hive-iot/
 1. **Device Identity** — X.509 device certificates, private key, CA
    certificate, MQTT authentication over TLS.
 2. **Device Firmware** — Wi-Fi connectivity, temperature reporting, RSSI,
-   uptime, firmware version.
+   uptime, firmware version, onboard OLED display of device status.
 3. **MQTT** — Topics: `devices/{deviceId}/telemetry`,
    `devices/{deviceId}/status`, `devices/{deviceId}/twin/reported`,
    `devices/{deviceId}/twin/desired`, `devices/{deviceId}/firmware`.
