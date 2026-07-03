@@ -1,6 +1,8 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include "secrets.h"
 
 // IdeaSpark built-in OLED: SDA=GPIO12(D6), SCL=GPIO14(D5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
@@ -13,10 +15,20 @@ const float TEMP_STEP = 1.0;
 const unsigned long STEP_INTERVAL_MS = 60000; // 60 seconds
 
 float simTemp = TEMP_START;
-int direction = 1; // 1 = rising, -1 = falling
+int direction = 1;
 unsigned long lastStepTime = 0;
 
 const char* MODE_LABEL = "SIMULATION";
+
+const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
+
+void drawStatusScreen(const char* line1, const char* line2) {
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_7x13_tf);
+  u8g2.drawStr(0, 20, line1);
+  u8g2.drawStr(0, 40, line2);
+  u8g2.sendBuffer();
+}
 
 void drawScreen() {
   u8g2.clearBuffer();
@@ -24,12 +36,45 @@ void drawScreen() {
   u8g2.drawStr(0, 12, "Mode:");
   u8g2.drawStr(50, 12, MODE_LABEL);
 
+  if (WiFi.status() == WL_CONNECTED) {
+    u8g2.drawStr(0, 62, WiFi.localIP().toString().c_str());
+  } else {
+    u8g2.drawStr(0, 62, "WiFi: disconnected");
+  }
+
   u8g2.setFont(u8g2_font_logisoso24_tf);
   char tempStr[8];
   snprintf(tempStr, sizeof(tempStr), "%.0fF", simTemp);
-  u8g2.drawStr(20, 50, tempStr);
+  u8g2.drawStr(20, 45, tempStr);
 
   u8g2.sendBuffer();
+}
+
+void connectWiFi() {
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(WIFI_SSID);
+  drawStatusScreen("Connecting WiFi...", WIFI_SSID);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < WIFI_TIMEOUT_MS) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("WiFi connected. IP: ");
+    Serial.println(WiFi.localIP());
+    drawStatusScreen("WiFi connected", WiFi.localIP().toString().c_str());
+    delay(1500);
+  } else {
+    Serial.println("WiFi connect FAILED (timeout). Continuing without WiFi.");
+    drawStatusScreen("WiFi FAILED", "continuing offline");
+    delay(1500);
+  }
 }
 
 void setup() {
@@ -42,13 +87,25 @@ void setup() {
   Serial.println(simTemp);
 
   u8g2.begin();
-  drawScreen();
 
+  connectWiFi();
+
+  drawScreen();
   lastStepTime = millis();
 }
 
 void loop() {
   unsigned long now = millis();
+
+  // If WiFi drops, try to reconnect (non-blocking check, ESP8266 core handles some of this automatically,
+  // but we log status changes)
+  static bool wasConnected = (WiFi.status() == WL_CONNECTED);
+  bool isConnected = (WiFi.status() == WL_CONNECTED);
+  if (isConnected != wasConnected) {
+    Serial.println(isConnected ? "WiFi reconnected." : "WiFi lost connection.");
+    wasConnected = isConnected;
+    drawScreen();
+  }
 
   if (now - lastStepTime >= STEP_INTERVAL_MS) {
     lastStepTime = now;
