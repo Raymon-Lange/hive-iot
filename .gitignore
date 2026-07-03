@@ -33,3 +33,6 @@ certificates/*.crt
 
 # Docs kept local only, not in the repo
 /docs/
+
+# Claude Code local project settings
+/.claude/

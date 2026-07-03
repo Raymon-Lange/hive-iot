@@ -1,11 +1,17 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <PubSubClient.h>
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "secrets.h"
 
 // IdeaSpark built-in OLED: SDA=GPIO12(D6), SCL=GPIO14(D5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
+
+const char* DEVICE_ID = "thermostat-001";
+
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
 
 // --- Simulation config ---
 const float TEMP_MIN = 65.0;
@@ -21,6 +27,8 @@ unsigned long lastStepTime = 0;
 const char* MODE_LABEL = "SIMULATION";
 
 const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
+const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
+unsigned long lastMqttAttempt = 0;
 
 void drawStatusScreen(const char* line1, const char* line2) {
   u8g2.clearBuffer();
@@ -36,11 +44,11 @@ void drawScreen() {
   u8g2.drawStr(0, 12, "Mode:");
   u8g2.drawStr(50, 12, MODE_LABEL);
 
-  if (WiFi.status() == WL_CONNECTED) {
-    u8g2.drawStr(0, 62, WiFi.localIP().toString().c_str());
-  } else {
-    u8g2.drawStr(0, 62, "WiFi: disconnected");
-  }
+  char statusLine[24];
+  const char* wifiState = (WiFi.status() == WL_CONNECTED) ? "OK" : "X";
+  const char* mqttState = mqttClient.connected() ? "OK" : "X";
+  snprintf(statusLine, sizeof(statusLine), "WiFi:%s MQTT:%s", wifiState, mqttState);
+  u8g2.drawStr(0, 62, statusLine);
 
   u8g2.setFont(u8g2_font_logisoso24_tf);
   char tempStr[8];
@@ -77,6 +85,38 @@ void connectWiFi() {
   }
 }
 
+void connectMQTT() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  Serial.print("Connecting to MQTT broker: ");
+  Serial.print(MQTT_BROKER_HOST);
+  Serial.print(":");
+  Serial.println(MQTT_BROKER_PORT);
+
+  if (mqttClient.connect(DEVICE_ID)) {
+    Serial.println("MQTT connected.");
+  } else {
+    Serial.print("MQTT connect failed, rc=");
+    Serial.println(mqttClient.state());
+  }
+}
+
+void publishTelemetry(unsigned long uptimeMs) {
+  if (!mqttClient.connected()) return;
+
+  char payload[128];
+  snprintf(payload, sizeof(payload),
+           "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu}",
+           DEVICE_ID, simTemp, uptimeMs);
+
+  char topic[48];
+  snprintf(topic, sizeof(topic), "devices/%s/telemetry", DEVICE_ID);
+
+  mqttClient.publish(topic, payload);
+  Serial.print("Published: ");
+  Serial.println(payload);
+}
+
 void setup() {
   Serial.begin(115200);
   delay(100);
@@ -89,6 +129,9 @@ void setup() {
   u8g2.begin();
 
   connectWiFi();
+
+  mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+  connectMQTT();
 
   drawScreen();
   lastStepTime = millis();
@@ -105,6 +148,16 @@ void loop() {
     Serial.println(isConnected ? "WiFi reconnected." : "WiFi lost connection.");
     wasConnected = isConnected;
     drawScreen();
+  }
+
+  if (isConnected) {
+    if (mqttClient.connected()) {
+      mqttClient.loop();
+    } else if (now - lastMqttAttempt >= MQTT_RECONNECT_INTERVAL_MS) {
+      lastMqttAttempt = now;
+      connectMQTT();
+      drawScreen();
+    }
   }
 
   if (now - lastStepTime >= STEP_INTERVAL_MS) {
@@ -126,6 +179,7 @@ void loop() {
     Serial.print(now);
     Serial.println(")");
 
+    publishTelemetry(now);
     drawScreen();
   }
 }
