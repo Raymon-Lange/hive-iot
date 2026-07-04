@@ -10,6 +10,23 @@ services:
       - mosquitto-log:/mosquitto/log
     restart: unless-stopped
 
+  api:
+    build:
+      context: ../services/api
+    container_name: hive-iot-api
+    ports:
+      - "8010:8000"
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
+      - HIVE_DB_PATH=/app/data/hive_iot.db
+    volumes:
+      - api-data:/app/data
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
 volumes:
   mosquitto-data:
   mosquitto-log:
+  api-data:

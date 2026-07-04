@@ -36,3 +36,7 @@ certificates/*.crt
 
 # Claude Code local project settings
 /.claude/
+
+# SQLite runtime data
+*.db
+*.db-journal
