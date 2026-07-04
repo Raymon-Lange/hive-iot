@@ -2,11 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
 from .db import init_db
+from .firmware import list_firmware, save_firmware
 from .mqtt_ingest import start_mqtt_client
-from .twin import get_twin, upsert_desired
+from .telemetry import get_telemetry_history
+from .twin import get_twin, list_devices, upsert_desired
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,10 +29,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Hive IoT API", lifespan=lifespan)
 
+# Local prototype dashboard only, not a public deployment.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/devices")
+def read_devices():
+    return list_devices()
 
 
 @app.get("/devices/{device_id}/twin")
@@ -40,6 +56,21 @@ def read_twin(device_id: str):
     return twin
 
 
+@app.get("/devices/{device_id}/telemetry")
+def read_telemetry(device_id: str, limit: int = 100):
+    return get_telemetry_history(device_id, limit)
+
+
 @app.post("/devices/{device_id}/desired")
 def set_desired(device_id: str, desired: dict[str, Any]):
     return {"deviceId": device_id, "desired": upsert_desired(device_id, desired)}
+
+
+@app.get("/firmware")
+def read_firmware():
+    return list_firmware()
+
+
+@app.post("/firmware")
+def upload_firmware(version: str = Form(...), file: UploadFile = File(...)):
+    return save_firmware(version, file)

@@ -26,6 +26,18 @@ services:
       - mosquitto
     restart: unless-stopped
 
+  dashboard:
+    build:
+      context: ../dashboard
+      args:
+        VITE_API_URL: http://localhost:8010
+    container_name: hive-iot-dashboard
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   mosquitto-data:
   mosquitto-log:

@@ -56,6 +56,32 @@ def get_twin(device_id: str) -> dict | None:
     }
 
 
+def list_devices() -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT device_id, reported_json, last_seen FROM twin ORDER BY device_id"
+    ).fetchall()
+    conn.close()
+
+    now = datetime.now(timezone.utc)
+    devices = []
+    for row in rows:
+        online = False
+        if row["last_seen"] is not None:
+            last_seen = datetime.fromisoformat(row["last_seen"])
+            online = (now - last_seen).total_seconds() < ONLINE_THRESHOLD_SECONDS
+
+        reported = json.loads(row["reported_json"])
+        devices.append({
+            "deviceId": row["device_id"],
+            "online": online,
+            "lastSeen": row["last_seen"],
+            "temperature": reported.get("temperature"),
+            "firmware": reported.get("firmware"),
+        })
+    return devices
+
+
 def upsert_desired(device_id: str, desired_updates: dict) -> dict:
     """Shallow-merge desired_updates into the twin's desired state, creating
     the twin row if it doesn't exist yet, and return the merged desired dict.

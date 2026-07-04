@@ -37,5 +37,15 @@ def init_db() -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS firmware (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            version TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            uploaded_at TEXT NOT NULL
+        )
+        """
+    )
     conn.commit()
     conn.close()

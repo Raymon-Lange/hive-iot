@@ -1,0 +1,415 @@
+:root {
+  --accent: #4361ee;
+  --text: #1a1a2e;
+  --muted: #6c757d;
+  --border: #e9ecef;
+  --bg: #e8eaed;
+  --card: #ffffff;
+  --header-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.07);
+  --label: #adb5bd;
+  --dot: #ced4da;
+  --tag-bg: #f1f3f5;
+  --tag-text: #495057;
+  --badge-active-bg: #d1fae5;
+  --badge-active-text: #065f46;
+  --badge-offline-bg: #fee2e2;
+  --badge-offline-text: #991b1b;
+
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 16px/145% var(--sans);
+  color-scheme: light;
+  color: var(--muted);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --accent: #7c93f5;
+  --text: #e8eaf0;
+  --muted: #9aa0ac;
+  --border: #2a2d3a;
+  --bg: #14151f;
+  --card: #1c1e2b;
+  --header-bg: #1c1e2b;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --label: #6b7280;
+  --dot: #4b5060;
+  --tag-bg: #262838;
+  --tag-text: #c7cbd6;
+  --badge-active-bg: #113b2c;
+  --badge-active-text: #6ee7b7;
+  --badge-offline-bg: #3f1219;
+  --badge-offline-text: #fca5a5;
+}
+
+/* Dataviz skill tokens: chart surface, ink, and the single sequential
+   hue used by the temperature line chart. Kept separate from the app's
+   --accent since chart color follows the palette's own validated rules,
+   not the app theme — the two blues are close but not identical.
+   Follows the same manual [data-theme] toggle as the rest of the app. */
+.viz-root {
+  --viz-surface: #fcfcfb;
+  --viz-text-primary: #0b0b0b;
+  --viz-text-secondary: #52514e;
+  --viz-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-baseline: #c3c2b7;
+  --viz-series-1: #2a78d6;
+}
+
+:root[data-theme='dark'] .viz-root {
+  --viz-surface: #1a1a19;
+  --viz-text-primary: #ffffff;
+  --viz-text-secondary: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-grid: #2c2c2a;
+  --viz-baseline: #383835;
+  --viz-series-1: #3987e5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+h1, h2, h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+.app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: var(--header-bg);
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.app-header .name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.app-header nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.app-header nav a {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.app-header nav a:hover {
+  color: var(--text);
+}
+
+.app-header nav a.active {
+  color: var(--text);
+  background: var(--tag-bg);
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+#theme-toggle {
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+#theme-toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--card);
+  transition: transform 0.2s;
+}
+
+:root[data-theme='dark'] #theme-toggle {
+  background: var(--accent);
+}
+
+:root[data-theme='dark'] #theme-toggle::before {
+  transform: translateX(1rem);
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--card);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.card + .card {
+  margin-top: 16px;
+}
+
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--card);
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+}
+
+.device-row:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px var(--shadow);
+  transform: translateY(-2px);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.badge.online {
+  color: var(--badge-active-text);
+  background: var(--badge-active-bg);
+}
+
+.badge.offline {
+  color: var(--badge-offline-text);
+  background: var(--badge-offline-bg);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--card);
+}
+
+.stat .label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.stat .value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+pre.twin-json {
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+
+form.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+}
+
+form.stacked label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+input, select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  width: fit-content;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+button:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+th {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.error {
+  color: var(--badge-offline-text);
+}
+
+.chart-card {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--viz-surface);
+}
+
+.chart-card figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.chart-card figcaption h3 {
+  font-size: 15px;
+  color: var(--viz-text-primary);
+}
+
+.chart-toggle {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--viz-text-secondary);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.chart-toggle:hover {
+  background: var(--border);
+  color: var(--viz-text-primary);
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--viz-text-primary);
+  color: var(--viz-surface);
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+}
+
+.chart-tooltip .value {
+  font-weight: 700;
+}
+
+.chart-empty {
+  color: var(--viz-muted);
+  font-size: 14px;
+  padding: 32px 0;
+  text-align: center;
+}
