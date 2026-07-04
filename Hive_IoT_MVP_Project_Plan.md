@@ -16,6 +16,16 @@ monitor only) to showcase:
 
 ------------------------------------------------------------------------
 
+# Status
+
+Milestones 1-5 are implemented; OTA (milestone 6) has not started. See
+`CLAUDE.md` for a breakdown of what each component currently does versus
+what's still planned (notably: MQTT is plaintext/no-auth pending Epic 1,
+and RSSI/uptime/firmware-version device reporting is deferred to the OTA
+work).
+
+------------------------------------------------------------------------
+
 # MVP Goals
 
 By the end of the project you will be able to:
@@ -167,12 +177,12 @@ reboots. 5. Device reports new version.
 
 # Milestones
 
-1.  ESP8266 Wi-Fi + Temperature
-2.  MQTT Telemetry
-3.  Backend + SQLite
-4.  Digital Twin
-5.  Dashboard
-6.  OTA Firmware
+1.  ESP8266 Wi-Fi + Temperature -- done
+2.  MQTT Telemetry -- done
+3.  Backend + SQLite -- done
+4.  Digital Twin -- done
+5.  Dashboard -- done
+6.  OTA Firmware -- not started
 
 ------------------------------------------------------------------------
 

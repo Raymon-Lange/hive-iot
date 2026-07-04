@@ -12,9 +12,27 @@ connected device. The MVP uses a single **ESP8266** acting as a thermostat
 - Device management
 - OTA firmware deployment
 
-This repository is currently in the planning stage — no code has been
-written yet. See `Hive_IoT_MVP_Project_Plan.md` for the full plan this file
-is derived from.
+See `Hive_IoT_MVP_Project_Plan.md` for the full plan this file is derived
+from.
+
+## Status
+
+Milestones 1-5 are implemented; OTA (milestone 6) has not started.
+
+- **Firmware**: ESP8266 connects to Wi-Fi, shows status on OLED, publishes
+  simulated temperature to `devices/{deviceId}/telemetry` every 60s.
+  Plaintext MQTT (no TLS/cert auth yet — Epic 1 deferred). RSSI, uptime,
+  and firmware version are not yet reported by the device.
+- **MQTT**: Mosquitto broker via Docker Compose, plaintext,
+  `allow_anonymous true`. Prototype config pending Epic 1.
+- **Backend**: FastAPI + SQLite, containerized. Implements the REST API
+  below, MQTT ingest into the Digital Twin, and firmware upload/listing.
+  `services/digital-twin` and `services/ota` are still stub READMEs — that
+  logic currently lives inside `services/api`.
+- **Dashboard**: React app, containerized. Overview, Device Detail
+  (with temperature history chart), and Firmware Management pages.
+- **Not started**: Epic 1 (X.509 device certs, TLS), and the device-side
+  OTA flow (downloading/installing firmware, reporting new version).
 
 ## MVP Goals
 
@@ -58,7 +76,7 @@ React Dashboard
 | Certificates    | OpenSSL                |
 | Infrastructure  | Docker Compose         |
 
-## Repository Structure (planned)
+## Repository Structure
 
 ```
 hive-iot/
@@ -93,7 +111,7 @@ hive-iot/
    updates Digital Twin → device downloads firmware → device installs and
    reboots → device reports new version.
 
-## REST API (planned)
+## REST API
 
 - `GET /devices`
 - `GET /devices/{id}`
@@ -102,7 +120,7 @@ hive-iot/
 - `POST /devices/{id}/desired`
 - `POST /firmware`
 
-## Database (planned)
+## Database
 
 **Devices**: id, name, certificate, firmware, last_seen, online
 
@@ -112,12 +130,12 @@ hive-iot/
 
 ## Milestones
 
-1. ESP8266 Wi-Fi + Temperature
-2. MQTT Telemetry
-3. Backend + SQLite
-4. Digital Twin
-5. Dashboard
-6. OTA Firmware
+1. ESP8266 Wi-Fi + Temperature — done
+2. MQTT Telemetry — done
+3. Backend + SQLite — done
+4. Digital Twin — done
+5. Dashboard — done
+6. OTA Firmware — not started
 
 ## Stretch Goals
 
