@@ -27,5 +27,15 @@ def init_db() -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS twin (
+            device_id TEXT PRIMARY KEY,
+            reported_json TEXT NOT NULL DEFAULT '{}',
+            desired_json TEXT NOT NULL DEFAULT '{}',
+            last_seen TEXT
+        )
+        """
+    )
     conn.commit()
     conn.close()

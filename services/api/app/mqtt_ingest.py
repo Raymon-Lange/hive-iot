@@ -5,6 +5,7 @@ import os
 import paho.mqtt.client as mqtt
 
 from .db import get_connection
+from .twin import upsert_reported
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +35,24 @@ def _on_message(client, userdata, msg):
         logger.warning("Dropping telemetry missing deviceId/temperature: %r", payload)
         return
 
+    rssi = payload.get("rssi")
+    uptime = payload.get("uptime")
+
     conn = get_connection()
     conn.execute(
         "INSERT INTO telemetry (device_id, temperature, rssi, uptime) VALUES (?, ?, ?, ?)",
-        (device_id, temperature, payload.get("rssi"), payload.get("uptime")),
+        (device_id, temperature, rssi, uptime),
     )
     conn.commit()
     conn.close()
     logger.info("Stored telemetry from %s: temp=%s", device_id, temperature)
+
+    upsert_reported(device_id, {
+        "temperature": temperature,
+        "uptime": uptime,
+        "rssi": rssi,
+        "firmware": payload.get("firmware"),
+    })
 
 
 def start_mqtt_client() -> mqtt.Client:
