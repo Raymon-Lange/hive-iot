@@ -9,6 +9,8 @@
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
 
 const char* DEVICE_ID = "thermostat-001";
+const char* FIRMWARE_VERSION = "0.1.0";
+
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -104,10 +106,10 @@ void connectMQTT() {
 void publishTelemetry(unsigned long uptimeMs) {
   if (!mqttClient.connected()) return;
 
-  char payload[128];
+  char payload[192];
   snprintf(payload, sizeof(payload),
-           "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu}",
-           DEVICE_ID, simTemp, uptimeMs);
+           "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu,\"firmware\":\"%s\"}",
+           DEVICE_ID, simTemp, uptimeMs, FIRMWARE_VERSION);
 
   char topic[48];
   snprintf(topic, sizeof(topic), "devices/%s/telemetry", DEVICE_ID);

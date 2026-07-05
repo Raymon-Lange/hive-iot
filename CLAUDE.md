@@ -76,6 +76,14 @@ React Dashboard
 | Certificates    | OpenSSL                |
 | Infrastructure  | Docker Compose         |
 
+## Local Dev Environment
+
+- PlatformIO CLI is installed in a dedicated venv, not on `PATH`:
+  `~/.venvs/pio/bin/pio`. Build the firmware with:
+  ```bash
+  ~/.venvs/pio/bin/pio run -d firmware/thermostat
+  ```
+
 ## Repository Structure
 
 ```
