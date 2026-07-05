@@ -17,22 +17,26 @@ from.
 
 ## Status
 
-Milestones 1-5 are implemented; OTA (milestone 6) has not started.
+Milestones 1-5 are implemented; OTA (milestone 6) is in progress — see
+`docs/Step6.md` for the runbook and current step-by-step status.
 
 - **Firmware**: ESP8266 connects to Wi-Fi, shows status on OLED, publishes
-  simulated temperature to `devices/{deviceId}/telemetry` every 60s.
-  Plaintext MQTT (no TLS/cert auth yet — Epic 1 deferred). RSSI, uptime,
-  and firmware version are not yet reported by the device.
+  simulated temperature to `devices/{deviceId}/telemetry` every 60s,
+  including its `FIRMWARE_VERSION` (currently `"0.1.0"`). Plaintext MQTT
+  (no TLS/cert auth yet — Epic 1 deferred). RSSI and uptime reporting
+  still pending; the device does not yet subscribe to or apply desired
+  firmware updates (planned as MQTT push, not poll — see `docs/Step6.md`).
 - **MQTT**: Mosquitto broker via Docker Compose, plaintext,
   `allow_anonymous true`. Prototype config pending Epic 1.
 - **Backend**: FastAPI + SQLite, containerized. Implements the REST API
-  below, MQTT ingest into the Digital Twin, and firmware upload/listing.
+  below, MQTT ingest into the Digital Twin, firmware upload/listing, and
+  `GET /firmware/{version}/download` for serving a specific binary.
   `services/digital-twin` and `services/ota` are still stub READMEs — that
   logic currently lives inside `services/api`.
 - **Dashboard**: React app, containerized. Overview, Device Detail
   (with temperature history chart), and Firmware Management pages.
 - **Not started**: Epic 1 (X.509 device certs, TLS), and the device-side
-  OTA flow (downloading/installing firmware, reporting new version).
+  OTA flow (subscribing to desired version, downloading/installing firmware).
 
 ## MVP Goals
 
@@ -143,7 +147,9 @@ hive-iot/
 3. Backend + SQLite — done
 4. Digital Twin — done
 5. Dashboard — done
-6. OTA Firmware — not started
+6. OTA Firmware — in progress (see `docs/Step6.md`): binary download
+   endpoint and device firmware-version reporting done; desired-version
+   MQTT push and device-side update trigger not yet started
 
 ## Stretch Goals
 

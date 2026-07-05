@@ -64,7 +64,13 @@ def read_telemetry(device_id: str, limit: int = 100):
 
 @app.post("/devices/{device_id}/desired")
 def set_desired(device_id: str, desired: dict[str, Any]):
-    return {"deviceId": device_id, "desired": upsert_desired(device_id, desired)}
+    merged = upsert_desired(device_id, desired)
+    firmware = merged.get("firmware")
+    if mqtt_client is not None and firmware is not None:
+        mqtt_client.publish(
+            f"devices/{device_id}/twin/desired/firmware", firmware, retain=True
+        )
+    return {"deviceId": device_id, "desired": merged}
 
 
 @app.get("/firmware")

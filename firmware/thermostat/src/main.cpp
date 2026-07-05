@@ -11,6 +11,8 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* 
 const char* DEVICE_ID = "thermostat-001";
 const char* FIRMWARE_VERSION = "0.1.0";
 
+String desiredFirmware = "";
+void checkAndApplyUpdate(); // defined later, in Step 4 (stubbed for now)
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -87,6 +89,28 @@ void connectWiFi() {
   }
 }
 
+void onMqttMessage(char* topic, byte* payload, unsigned int length) {
+  String message;
+  message.reserve(length);
+  for (unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  desiredFirmware = message;
+  Serial.print("Desired firmware: ");
+  Serial.println(desiredFirmware);
+  checkAndApplyUpdate();
+}
+
+void checkAndApplyUpdate() {
+  // Stub until Step 4 adds the actual ESPhttpUpdate call.
+  if (desiredFirmware.length() > 0 && desiredFirmware != FIRMWARE_VERSION) {
+    Serial.print("Update needed: would attempt OTA from ");
+    Serial.print(FIRMWARE_VERSION);
+    Serial.print(" to ");
+    Serial.println(desiredFirmware);
+  }
+}
+
 void connectMQTT() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -97,6 +121,9 @@ void connectMQTT() {
 
   if (mqttClient.connect(DEVICE_ID)) {
     Serial.println("MQTT connected.");
+    char desiredTopic[64];
+    snprintf(desiredTopic, sizeof(desiredTopic), "devices/%s/twin/desired/firmware", DEVICE_ID);
+    mqttClient.subscribe(desiredTopic);
   } else {
     Serial.print("MQTT connect failed, rc=");
     Serial.println(mqttClient.state());
@@ -133,6 +160,7 @@ void setup() {
   connectWiFi();
 
   mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+  mqttClient.setCallback(onMqttMessage);
   connectMQTT();
 
   drawScreen();
