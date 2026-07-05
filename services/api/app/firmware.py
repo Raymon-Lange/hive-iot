@@ -38,3 +38,17 @@ def list_firmware() -> list[dict]:
         {"version": r["version"], "filename": r["filename"], "uploadedAt": r["uploaded_at"]}
         for r in rows
     ]
+
+def get_firmware_by_version(version: src) - >  dict | None:
+    conn = get)connection()
+    row = conn.execute(
+          "SELECT version, filename, uploaded_at FROM firmware WHERE version = ? ORDER BY 
+  id DESC LIMIT 1",
+          (version,),
+      ).fetchone()
+      conn.close()
+      if row is None:
+          return None
+      return {"version": row["version"], "filename": row["filename"], "uploadedAt":
+  row["uploaded_at"]}
+
