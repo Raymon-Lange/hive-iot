@@ -1,3 +1,5 @@
+name: hive-iot
+
 services:
   mosquitto:
     image: eclipse-mosquitto:2

@@ -4,9 +4,10 @@ from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from .db import init_db
-from .firmware import list_firmware, save_firmware
+from .firmware import FIRMWARE_DIR, get_firmware_by_version, list_firmware, save_firmware
 from .mqtt_ingest import start_mqtt_client
 from .telemetry import get_telemetry_history
 from .twin import get_twin, list_devices, upsert_desired
@@ -74,3 +75,15 @@ def read_firmware():
 @app.post("/firmware")
 def upload_firmware(version: str = Form(...), file: UploadFile = File(...)):
     return save_firmware(version, file)
+
+
+@app.get("/firmware/{version}/download")
+def download_firmware(version: str):
+    record = get_firmware_by_version(version)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Firmware not found")
+    return FileResponse(
+        FIRMWARE_DIR / record["filename"],
+        filename=record["filename"],
+        media_type="application/octet-stream",
+    )

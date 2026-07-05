@@ -194,6 +194,9 @@ reboots. 5. Device reports new version.
 -   Rules engine
 -   Alerts
 -   Cloud deployment
+-   Switch OTA desired-state delivery from HTTP poll to MQTT push
+    (`devices/{deviceId}/twin/desired`, per Epic 3) once multiple devices
+    make polling wasteful -- see `docs/Step6.md` Step 0 for the tradeoff
 
 ------------------------------------------------------------------------
 
