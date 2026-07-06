@@ -10,7 +10,7 @@
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
 
 const char* DEVICE_ID = "thermostat-001";
-const char* FIRMWARE_VERSION = "0.1.0";
+const char* FIRMWARE_VERSION = "0.1.1";
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
