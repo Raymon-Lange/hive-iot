@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 
 from .db import get_connection
+from .devices import list_registered_devices
 
 ONLINE_THRESHOLD_SECONDS = 90  # ~1.5x the device's 60s telemetry interval
 
@@ -57,14 +58,24 @@ def get_twin(device_id: str) -> dict | None:
 
 
 def list_devices() -> list[dict]:
+    """List every device that's either registered or has ever sent telemetry.
+
+    Registration (devices.py) is a directory, not a gate: a registered
+    device with no telemetry yet still shows up (offline, no readings),
+    and a device that's been publishing telemetry without ever being
+    explicitly registered still shows up too (name is just null) — this
+    keeps existing unregistered devices visible rather than dropping them
+    once registration was introduced.
+    """
+    registered = list_registered_devices()
+
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT device_id, reported_json, last_seen FROM twin ORDER BY device_id"
-    ).fetchall()
+    rows = conn.execute("SELECT device_id, reported_json, last_seen FROM twin").fetchall()
     conn.close()
 
     now = datetime.now(timezone.utc)
-    devices = []
+    devices_by_id = {}
+
     for row in rows:
         online = False
         if row["last_seen"] is not None:
@@ -72,14 +83,27 @@ def list_devices() -> list[dict]:
             online = (now - last_seen).total_seconds() < ONLINE_THRESHOLD_SECONDS
 
         reported = json.loads(row["reported_json"])
-        devices.append({
+        devices_by_id[row["device_id"]] = {
             "deviceId": row["device_id"],
+            "name": registered.get(row["device_id"], {}).get("name"),
             "online": online,
             "lastSeen": row["last_seen"],
             "temperature": reported.get("temperature"),
             "firmware": reported.get("firmware"),
-        })
-    return devices
+        }
+
+    for device_id, info in registered.items():
+        if device_id not in devices_by_id:
+            devices_by_id[device_id] = {
+                "deviceId": device_id,
+                "name": info["name"],
+                "online": False,
+                "lastSeen": None,
+                "temperature": None,
+                "firmware": None,
+            }
+
+    return [devices_by_id[k] for k in sorted(devices_by_id)]
 
 
 def upsert_desired(device_id: str, desired_updates: dict) -> dict:

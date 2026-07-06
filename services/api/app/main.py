@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .db import init_db
+from .devices import register_device
 from .firmware import FIRMWARE_DIR, get_firmware_by_version, list_firmware, save_firmware
 from .mqtt_ingest import start_mqtt_client
 from .telemetry import get_telemetry_history
@@ -47,6 +48,14 @@ def health():
 @app.get("/devices")
 def read_devices():
     return list_devices()
+
+
+@app.post("/devices")
+def create_device(payload: dict[str, Any]):
+    device_id = payload["deviceId"]
+    name = payload["name"]
+    certificate = payload.get("certificate")
+    return register_device(device_id, name, certificate)
 
 
 @app.get("/devices/{device_id}/twin")

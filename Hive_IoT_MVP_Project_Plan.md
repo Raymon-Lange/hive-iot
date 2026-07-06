@@ -182,7 +182,8 @@ reboots. 5. Device reports new version.
 3.  Backend + SQLite -- done
 4.  Digital Twin -- done
 5.  Dashboard -- done
-6.  OTA Firmware -- not started
+6.  OTA Firmware -- unsigned loop done and verified end-to-end (see
+    `docs/Step6.md`); signed verification moved to Stretch Goals
 
 ------------------------------------------------------------------------
 
@@ -194,6 +195,9 @@ reboots. 5. Device reports new version.
 -   Rules engine
 -   Alerts
 -   Cloud deployment
+-   OTA firmware signing (ECDSA P-256 + SHA-256 over the binary, verified
+    on-device against a baked-in public key before flashing) -- full design
+    already written up in `docs/Step6.md` Step 6-7, not yet built
 
 ------------------------------------------------------------------------
 

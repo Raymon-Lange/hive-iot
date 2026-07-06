@@ -17,17 +17,23 @@ from.
 
 ## Status
 
-Milestones 1-5 are implemented; OTA (milestone 6) is in progress — see
-`docs/Step6.md` for the runbook and current step-by-step status.
+All six milestones are implemented — OTA (milestone 6) works end-to-end
+unsigned, verified both success and failure paths. See `docs/Step6.md` for
+the runbook. Signed firmware verification is a Stretch Goal, not required
+for the MVP — full design already written up in that doc's Step 6-7.
 
 - **Firmware**: ESP8266 connects to Wi-Fi, shows status on OLED, publishes
   simulated temperature to `devices/{deviceId}/telemetry` every 60s,
-  including its `FIRMWARE_VERSION` (currently `"0.1.0"`). Plaintext MQTT
+  including its `FIRMWARE_VERSION` (currently `"0.1.1"`). Plaintext MQTT
   (no TLS/cert auth yet — Epic 1 deferred). RSSI and uptime reporting
   still pending. Device subscribes to `devices/{deviceId}/twin/desired/firmware`
-  and logs a "would attempt OTA" debug message on a version mismatch, but
-  doesn't yet download/flash/reboot — that's the last piece, see
-  `docs/Step6.md` Step 4.
+  and, on a version mismatch, downloads and flashes the new binary via
+  `ESPhttpUpdate` and reboots — verified working end-to-end. A sticky
+  `otaFailed` flag stops retrying after a failed attempt (until
+  power-cycle) so a bad push doesn't loop instead of reporting telemetry.
+  No integrity/signature verification — a corrupted or malicious binary
+  would currently be flashed without complaint; closing that gap is a
+  Stretch Goal (design in `docs/Step6.md` Step 6-7), not required for MVP.
 - **MQTT**: Mosquitto broker via Docker Compose, plaintext,
   `allow_anonymous true`. Prototype config pending Epic 1.
 - **Backend**: FastAPI + SQLite, containerized. Implements the REST API
@@ -38,8 +44,8 @@ Milestones 1-5 are implemented; OTA (milestone 6) is in progress — see
   are still stub READMEs — that logic currently lives inside `services/api`.
 - **Dashboard**: React app, containerized. Overview, Device Detail
   (with temperature history chart), and Firmware Management pages.
-- **Not started**: Epic 1 (X.509 device certs, TLS), and the device-side
-  OTA download/flash/reboot (Step 4 in `docs/Step6.md`).
+- **Not started**: Epic 1 (X.509 device certs, TLS). OTA signature
+  verification (Step 6-7 in `docs/Step6.md`) moved to Stretch Goals.
 
 ## MVP Goals
 
@@ -152,10 +158,10 @@ hive-iot/
 3. Backend + SQLite — done
 4. Digital Twin — done
 5. Dashboard — done
-6. OTA Firmware — in progress (see `docs/Step6.md`): binary download
-   endpoint, device firmware-version reporting, and desired-version MQTT
-   push (backend publish + device subscribe/callback) all done;
-   device-side download/flash/reboot trigger not yet started
+6. OTA Firmware — done, unsigned loop verified end-to-end (binary download
+   endpoint, firmware-version reporting, MQTT push, device
+   download/flash/reboot, failure handling). Signed verification moved to
+   Stretch Goals (see `docs/Step6.md` Step 6-7)
 
 ## Stretch Goals
 
@@ -165,6 +171,9 @@ hive-iot/
 - Rules engine
 - Alerts
 - Cloud deployment
+- OTA firmware signing (ECDSA P-256 + SHA-256, verified on-device against
+  a baked-in public key before flashing) — full design in `docs/Step6.md`
+  Step 6-7, not yet built
 
 ## Success Criteria
 

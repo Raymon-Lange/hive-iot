@@ -14,6 +14,14 @@ export function listDevices() {
   return request('/devices')
 }
 
+export function registerDevice(deviceId, name) {
+  return request('/devices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, name }),
+  })
+}
+
 export function getTwin(deviceId) {
   return request(`/devices/${deviceId}/twin`)
 }

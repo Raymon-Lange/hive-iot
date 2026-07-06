@@ -39,6 +39,15 @@ def init_db() -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS devices (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            certificate TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS firmware (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             version TEXT NOT NULL,
