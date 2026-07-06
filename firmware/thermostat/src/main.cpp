@@ -10,7 +10,7 @@
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
 
 const char* DEVICE_ID = "thermostat-001";
-const char* FIRMWARE_VERSION = "0.1.2";
+const char* FIRMWARE_VERSION = "0.1.3"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -30,7 +30,7 @@ float simTemp = TEMP_START;
 int direction = 1;
 unsigned long lastStepTime = 0;
 
-const char* MODE_LABEL = "SIMULATION";
+const char* MODE_LABEL = "SIM";
 
 const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
 const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
@@ -49,6 +49,7 @@ void drawScreen() {
   u8g2.setFont(u8g2_font_7x13_tf);
   u8g2.drawStr(0, 12, "Mode:");
   u8g2.drawStr(50, 12, MODE_LABEL);
+  u8g2.drawStr(75, 12, FIRMWARE_VERSION);
 
   char statusLine[24];
   const char* wifiState = (WiFi.status() == WL_CONNECTED) ? "OK" : "X";
