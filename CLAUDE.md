@@ -24,19 +24,22 @@ Milestones 1-5 are implemented; OTA (milestone 6) is in progress — see
   simulated temperature to `devices/{deviceId}/telemetry` every 60s,
   including its `FIRMWARE_VERSION` (currently `"0.1.0"`). Plaintext MQTT
   (no TLS/cert auth yet — Epic 1 deferred). RSSI and uptime reporting
-  still pending; the device does not yet subscribe to or apply desired
-  firmware updates (planned as MQTT push, not poll — see `docs/Step6.md`).
+  still pending. Device subscribes to `devices/{deviceId}/twin/desired/firmware`
+  and logs a "would attempt OTA" debug message on a version mismatch, but
+  doesn't yet download/flash/reboot — that's the last piece, see
+  `docs/Step6.md` Step 4.
 - **MQTT**: Mosquitto broker via Docker Compose, plaintext,
   `allow_anonymous true`. Prototype config pending Epic 1.
 - **Backend**: FastAPI + SQLite, containerized. Implements the REST API
-  below, MQTT ingest into the Digital Twin, firmware upload/listing, and
-  `GET /firmware/{version}/download` for serving a specific binary.
-  `services/digital-twin` and `services/ota` are still stub READMEs — that
-  logic currently lives inside `services/api`.
+  below, MQTT ingest into the Digital Twin, firmware upload/listing,
+  `GET /firmware/{version}/download` for serving a specific binary, and
+  publishes desired firmware changes to MQTT (retained) on
+  `POST /devices/{id}/desired`. `services/digital-twin` and `services/ota`
+  are still stub READMEs — that logic currently lives inside `services/api`.
 - **Dashboard**: React app, containerized. Overview, Device Detail
   (with temperature history chart), and Firmware Management pages.
 - **Not started**: Epic 1 (X.509 device certs, TLS), and the device-side
-  OTA flow (subscribing to desired version, downloading/installing firmware).
+  OTA download/flash/reboot (Step 4 in `docs/Step6.md`).
 
 ## MVP Goals
 
@@ -130,7 +133,9 @@ hive-iot/
 - `GET /devices/{id}/twin`
 - `GET /devices/{id}/telemetry`
 - `POST /devices/{id}/desired`
+- `GET /firmware`
 - `POST /firmware`
+- `GET /firmware/{version}/download`
 
 ## Database
 
@@ -148,8 +153,9 @@ hive-iot/
 4. Digital Twin — done
 5. Dashboard — done
 6. OTA Firmware — in progress (see `docs/Step6.md`): binary download
-   endpoint and device firmware-version reporting done; desired-version
-   MQTT push and device-side update trigger not yet started
+   endpoint, device firmware-version reporting, and desired-version MQTT
+   push (backend publish + device subscribe/callback) all done;
+   device-side download/flash/reboot trigger not yet started
 
 ## Stretch Goals
 

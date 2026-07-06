@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266httpUpdate.h>
 #include <PubSubClient.h>
 #include <U8g2lib.h>
 #include <Wire.h>
@@ -12,6 +13,7 @@ const char* DEVICE_ID = "thermostat-001";
 const char* FIRMWARE_VERSION = "0.1.0";
 
 String desiredFirmware = "";
+bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
 void checkAndApplyUpdate(); // defined later, in Step 4 (stubbed for now)
 
 WiFiClient espClient;
@@ -102,12 +104,36 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
 }
 
 void checkAndApplyUpdate() {
-  // Stub until Step 4 adds the actual ESPhttpUpdate call.
+  if (otaFailed) return; // already failed this boot; skip until power-cycle
+
   if (desiredFirmware.length() > 0 && desiredFirmware != FIRMWARE_VERSION) {
     Serial.print("Update needed: would attempt OTA from ");
     Serial.print(FIRMWARE_VERSION);
     Serial.print(" to ");
     Serial.println(desiredFirmware);
+
+    drawStatusScreen("Update fimrware :", desiredFirmware.c_str());
+
+    char url[128];
+    snprintf(url, sizeof(url), "http://%s:%d/firmware/%s/download", API_HOST, API_PORT, desiredFirmware.c_str());
+
+
+    WiFiClient client;
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, url);
+
+    switch(ret){
+        case HTTP_UPDATE_FAILED:
+            Serial.printf("OTA failed (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+            drawStatusScreen("Update FAILED", ESPhttpUpdate.getLastErrorString().c_str());
+            otaFailed = true;
+            break;
+        case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("OTA: no update needed.");
+        break;
+      case HTTP_UPDATE_OK:
+        // device reboots automatically; this line won't be reached
+        break;
+    }
   }
 }
 
