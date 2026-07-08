@@ -46,6 +46,16 @@ for the MVP — full design already written up in that doc's Step 6-7.
   (with temperature history chart), and Firmware Management pages.
 - **Not started**: Epic 1 (X.509 device certs, TLS). OTA signature
   verification (Step 6-7 in `docs/Step6.md`) moved to Stretch Goals.
+- **Device onboarding**: Step 1 implemented — device IDs are now
+  MAC-derived, computed at boot in `deriveDeviceId()` (`main.cpp`),
+  replacing the old hardcoded `DEVICE_ID` constant. One firmware build
+  now serves every unit, no per-device compile step, no certs.
+  Registration/naming and OTA triggering reuse the existing
+  dashboard/backend endpoints unchanged, not yet re-verified end-to-end
+  on physical hardware. Deliberately keeps MQTT/OTA plaintext (no device
+  auth) for now — device authentication stays scoped to Epic 1, deferred
+  separately, not blocked on this plan. Full design in
+  `docs/DeviceOnboarding.md`.
 
 ## MVP Goals
 
