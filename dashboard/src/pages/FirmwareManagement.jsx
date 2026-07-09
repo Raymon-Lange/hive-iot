@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listDevices, listFirmware, setDesired, uploadFirmware } from '../api.js'
+import StatusMessage from '../components/StatusMessage.jsx'
 
 export default function FirmwareManagement() {
   const [firmwareList, setFirmwareList] = useState(null)
@@ -44,7 +45,7 @@ export default function FirmwareManagement() {
       await setDesired(selectedDevice, { firmware: selectedVersion })
       setStatus({
         type: 'ok',
-        message: `Set desired firmware ${selectedVersion} on ${selectedDevice}. Note: the device doesn't install it yet — OTA isn't wired up on the firmware side.`,
+        message: `Set desired firmware ${selectedVersion} on ${selectedDevice}.`,
       })
     } catch (err) {
       setStatus({ type: 'error', message: err.message })
@@ -55,14 +56,11 @@ export default function FirmwareManagement() {
     <div>
       <h2>Firmware Management</h2>
       <p className="muted">
-        Upload a firmware build and push a desired version to a device. This
-        only sets the twin's desired state — devices don't download or
-        install firmware yet.
+        Upload a firmware build and push a desired version to a device. The
+        device picks up the desired version over MQTT and installs it via OTA.
       </p>
 
-      {status && (
-        <p className={status.type === 'error' ? 'error' : 'muted'}>{status.message}</p>
-      )}
+      <StatusMessage status={status} onClose={() => setStatus(null)} />
 
       <div className="card">
         <h3>Upload firmware</h3>

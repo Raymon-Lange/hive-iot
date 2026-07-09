@@ -358,6 +358,34 @@ th {
   color: var(--badge-offline-text);
 }
 
+.status-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.status-message-error {
+  color: var(--badge-offline-text);
+  border-color: var(--badge-offline-text);
+}
+
+.status-message-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  padding: 0 2px;
+}
+
 .chart-card {
   margin: 0;
   border: 1px solid var(--border);

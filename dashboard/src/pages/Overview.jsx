@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listDevices, registerDevice } from '../api.js'
+import StatusMessage from '../components/StatusMessage.jsx'
 
 export default function Overview() {
   const [devices, setDevices] = useState(null)
@@ -66,9 +67,7 @@ export default function Overview() {
           </label>
           <button type="submit">Register</button>
         </form>
-        {status && (
-          <p className={status.type === 'error' ? 'error' : 'muted'}>{status.message}</p>
-        )}
+        <StatusMessage status={status} onClose={() => setStatus(null)} />
       </div>
 
       {error && <p className="error">Failed to load devices: {error}</p>}
