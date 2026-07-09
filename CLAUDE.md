@@ -42,8 +42,12 @@ for the MVP — full design already written up in that doc's Step 6-7.
   publishes desired firmware changes to MQTT (retained) on
   `POST /devices/{id}/desired`. `services/digital-twin` and `services/ota`
   are still stub READMEs — that logic currently lives inside `services/api`.
-- **Dashboard**: React app, containerized. Overview, Device Detail
-  (with temperature history chart), and Firmware Management pages.
+- **Dashboard**: React app, containerized. Overview page lets you register
+  a device (ID + name) and lists devices as a grid of cards (temperature,
+  firmware version, last-reported time, online/offline badge); Device
+  Detail page (with temperature history chart and RSSI) and Firmware
+  Management page round it out. Status/error messages across pages use a
+  shared dismissible `StatusMessage` component.
 - **Not started**: Epic 1 (X.509 device certs, TLS). OTA signature
   verification (Step 6-7 in `docs/Step6.md`) moved to Stretch Goals.
 - **Device onboarding**: Step 1 implemented — device IDs are now
@@ -145,7 +149,7 @@ hive-iot/
 ## REST API
 
 - `GET /devices`
-- `GET /devices/{id}`
+- `POST /devices` (register/rename a device — id, name, optional certificate)
 - `GET /devices/{id}/twin`
 - `GET /devices/{id}/telemetry`
 - `POST /devices/{id}/desired`
@@ -155,7 +159,10 @@ hive-iot/
 
 ## Database
 
-**Devices**: id, name, certificate, firmware, last_seen, online
+**Devices**: id, name, certificate — the directory of explicitly-registered
+devices. `firmware`, `last_seen`, and `online` shown on the dashboard are
+derived at read time from `twin` (and telemetry-derived `reported_json`),
+not stored on this table.
 
 **Telemetry**: device_id, temperature, rssi, uptime, timestamp
 
@@ -175,7 +182,6 @@ hive-iot/
 
 ## Stretch Goals
 
-- Multiple devices
 - Certificate rotation
 - Fleet management
 - Rules engine
