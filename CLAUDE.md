@@ -24,9 +24,9 @@ for the MVP — full design already written up in that doc's Step 6-7.
 
 - **Firmware**: ESP8266 connects to Wi-Fi, shows status on OLED, publishes
   simulated temperature to `devices/{deviceId}/telemetry` every 60s,
-  including its `FIRMWARE_VERSION` (currently `"0.1.1"`). Plaintext MQTT
-  (no TLS/cert auth yet — Epic 1 deferred). RSSI and uptime reporting
-  still pending. Device subscribes to `devices/{deviceId}/twin/desired/firmware`
+  including its `FIRMWARE_VERSION` (currently `"0.1.4"`), uptime, and RSSI.
+  Plaintext MQTT (no TLS/cert auth yet — Epic 1 deferred). Device
+  subscribes to `devices/{deviceId}/twin/desired/firmware`
   and, on a version mismatch, downloads and flashes the new binary via
   `ESPhttpUpdate` and reboots — verified working end-to-end. A sticky
   `otaFailed` flag stops retrying after a failed attempt (until

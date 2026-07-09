@@ -11,7 +11,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* 
 
 char deviceId[24] = "thermostat-unset"; // overwritten by deriveDeviceId() once WiFi is up
 const char* DEVICE_ID = deviceId;
-const char* FIRMWARE_VERSION = "0.1.3"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
+const char* FIRMWARE_VERSION = "0.1.4"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -172,8 +172,8 @@ void publishTelemetry(unsigned long uptimeMs) {
 
   char payload[192];
   snprintf(payload, sizeof(payload),
-           "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu,\"firmware\":\"%s\"}",
-           DEVICE_ID, simTemp, uptimeMs, FIRMWARE_VERSION);
+           "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu,\"firmware\":\"%s\",\"rssi\":%d}",
+           DEVICE_ID, simTemp, uptimeMs, FIRMWARE_VERSION, WiFi.RSSI());
 
   char topic[48];
   snprintf(topic, sizeof(topic), "devices/%s/telemetry", DEVICE_ID);
