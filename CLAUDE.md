@@ -22,15 +22,18 @@ unsigned, verified both success and failure paths. See `docs/Step6.md` for
 the runbook. Signed firmware verification is a Stretch Goal, not required
 for the MVP — full design already written up in that doc's Step 6-7.
 
-- **Firmware**: Two PlatformIO build modes — **SIM** (default `pio run`,
-  temperature stepped in software) and **PHY** (`pio run -e nodemcuv2-phy`,
-  reads real temperature from a BMP180 sensor over I2C, sharing the OLED's
-  D5/D6 bus). PHY mode has not yet been flashed/verified on physical
-  hardware. ESP8266 connects to Wi-Fi, shows status on OLED, publishes
-  simulated temperature to `devices/{deviceId}/telemetry` every 60s,
-  including its `FIRMWARE_VERSION` (currently `"0.1.7"`), uptime, and RSSI.
-  Plaintext MQTT (no TLS/cert auth yet — Epic 1 deferred). Device
-  subscribes to `devices/{deviceId}/twin/desired/firmware`
+- **Firmware**: One build supports two temperature sources, switchable at
+  runtime over MQTT (no reflash needed): **SIM** (default on boot,
+  temperature stepped in software) and **PHY** (reads real temperature from
+  a BMP180 sensor over I2C, sharing the OLED's D5/D6 bus). Device subscribes
+  to `devices/{deviceId}/twin/desired/sensorMode` (payload `sim`/`phy`) to
+  switch; the BMP180 is probed at boot regardless of starting mode. Verified
+  working end-to-end on physical hardware — sensor detected, real readings
+  published. ESP8266 connects to Wi-Fi, shows status on OLED, publishes
+  temperature to `devices/{deviceId}/telemetry` every 60s, including its
+  `FIRMWARE_VERSION` (currently `"0.1.8"`), uptime, and RSSI. Plaintext MQTT
+  (no TLS/cert auth yet — Epic 1 deferred). Device also subscribes to
+  `devices/{deviceId}/twin/desired/firmware`
   and, on a version mismatch, downloads and flashes the new binary via
   `ESPhttpUpdate` and reboots — verified working end-to-end. A sticky
   `otaFailed` flag stops retrying after a failed attempt (until

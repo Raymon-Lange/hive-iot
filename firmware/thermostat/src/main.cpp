@@ -5,16 +5,14 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "secrets.h"
-#ifdef FW_MODE_PHY
 #include <Adafruit_BMP085.h>
-#endif
 
 // IdeaSpark built-in OLED: SDA=GPIO12(D6), SCL=GPIO14(D5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
 
 char deviceId[24] = "thermostat-unset"; // overwritten by deriveDeviceId() once WiFi is up
 const char* DEVICE_ID = deviceId;
-const char* FIRMWARE_VERSION = "0.1.7"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
+const char* FIRMWARE_VERSION = "0.1.8"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -34,13 +32,11 @@ float currentTemp = TEMP_START;
 int direction = 1;
 unsigned long lastStepTime = 0;
 
-#ifdef FW_MODE_PHY
-const char* MODE_LABEL = "PHY";
+enum TempSource { SOURCE_SIM, SOURCE_PHY };
+TempSource currentSource = SOURCE_SIM; // boots in SIM; switch at runtime via topicDesiredSensorMode
+const char* MODE_LABEL = "SIM";
 Adafruit_BMP085 bmp;
 bool bmpReady = false;
-#else
-const char* MODE_LABEL = "SIM";
-#endif
 
 const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
 const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
@@ -56,6 +52,7 @@ const int HEAT_LED_PIN = D0;
 char topicDesiredFirmware[64];
 char topicDesiredMode[64];
 char topicDesiredTemp[64];
+char topicDesiredSensorMode[64];
 
 void drawStatusScreen(const char* line1, const char* line2) {
   u8g2.clearBuffer();
@@ -154,6 +151,17 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     desiredTemp = message.toFloat();
     Serial.print("Desired temp: ");
     Serial.println(desiredTemp);
+  } else if (strcmp(topic, topicDesiredSensorMode) == 0) {
+    if (message == "phy") {
+      currentSource = SOURCE_PHY;
+      MODE_LABEL = "PHY";
+    } else {
+      currentSource = SOURCE_SIM;
+      MODE_LABEL = "SIM";
+    }
+    Serial.print("Desired sensor mode: ");
+    Serial.println(message);
+    drawScreen();
   }
 }
 
@@ -204,6 +212,7 @@ void connectMQTT() {
     mqttClient.subscribe(topicDesiredFirmware);
     mqttClient.subscribe(topicDesiredMode);
     mqttClient.subscribe(topicDesiredTemp);
+    mqttClient.subscribe(topicDesiredSensorMode);
   } else {
     Serial.print("MQTT connect failed, rc=");
     Serial.println(mqttClient.state());
@@ -211,24 +220,24 @@ void connectMQTT() {
 }
 
 void updateTemperature() {
-#ifdef FW_MODE_PHY
-  if (!bmpReady) {
-    Serial.println("BMP180 not ready, keeping last known temperature");
-    return;
-  }
-  float celsius = bmp.readTemperature();
-  currentTemp = celsius * 9.0 / 5.0 + 32.0;
-#else
-  currentTemp += direction * TEMP_STEP;
+  if (currentSource == SOURCE_PHY) {
+    if (!bmpReady) {
+      Serial.println("BMP180 not ready, keeping last known temperature");
+      return;
+    }
+    float celsius = bmp.readTemperature();
+    currentTemp = celsius * 9.0 / 5.0 + 32.0;
+  } else {
+    currentTemp += direction * TEMP_STEP;
 
-  if (currentTemp >= TEMP_MAX) {
-    currentTemp = TEMP_MAX;
-    direction = -1;
-  } else if (currentTemp <= TEMP_MIN) {
-    currentTemp = TEMP_MIN;
-    direction = 1;
+    if (currentTemp >= TEMP_MAX) {
+      currentTemp = TEMP_MAX;
+      direction = -1;
+    } else if (currentTemp <= TEMP_MIN) {
+      currentTemp = TEMP_MIN;
+      direction = 1;
+    }
   }
-#endif
 }
 
 void publishTelemetry(unsigned long uptimeMs) {
@@ -260,12 +269,10 @@ void setup() {
 
   u8g2.begin();
 
-#ifdef FW_MODE_PHY
   bmpReady = bmp.begin();
   if (!bmpReady) {
     Serial.println("BMP180 not detected on I2C bus.");
   }
-#endif
 
   pinMode(COOL_LED_PIN, OUTPUT);
   pinMode(HEAT_LED_PIN, OUTPUT);
@@ -278,6 +285,7 @@ void setup() {
   snprintf(topicDesiredFirmware, sizeof(topicDesiredFirmware), "devices/%s/twin/desired/firmware", DEVICE_ID);
   snprintf(topicDesiredMode, sizeof(topicDesiredMode), "devices/%s/twin/desired/mode", DEVICE_ID);
   snprintf(topicDesiredTemp, sizeof(topicDesiredTemp), "devices/%s/twin/desired/temp", DEVICE_ID);
+  snprintf(topicDesiredSensorMode, sizeof(topicDesiredSensorMode), "devices/%s/twin/desired/sensorMode", DEVICE_ID);
 
   mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
   mqttClient.setCallback(onMqttMessage);
