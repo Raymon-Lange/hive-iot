@@ -331,6 +331,11 @@ button:hover {
   color: #fff;
 }
 
+button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
