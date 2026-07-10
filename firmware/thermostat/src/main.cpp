@@ -11,7 +11,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* 
 
 char deviceId[24] = "thermostat-unset"; // overwritten by deriveDeviceId() once WiFi is up
 const char* DEVICE_ID = deviceId;
-const char* FIRMWARE_VERSION = "0.1.5"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
+const char* FIRMWARE_VERSION = "0.1.6"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -36,6 +36,17 @@ const char* MODE_LABEL = "SIM";
 const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
 const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
 unsigned long lastMqttAttempt = 0;
+
+enum ThermostatMode { MODE_IDLE, MODE_COOL, MODE_HEAT };
+ThermostatMode currentMode = MODE_IDLE;
+float desiredTemp = TEMP_START;
+
+const int COOL_LED_PIN = D1;
+const int HEAT_LED_PIN = D0;
+
+char topicDesiredFirmware[64];
+char topicDesiredMode[64];
+char topicDesiredTemp[64];
 
 void drawStatusScreen(const char* line1, const char* line2) {
   u8g2.clearBuffer();
@@ -102,16 +113,39 @@ void deriveDeviceId() {
   Serial.println(deviceId); // operator reads this to register the device
 }
 
+void updateModeLeds() {
+  digitalWrite(COOL_LED_PIN, currentMode == MODE_COOL ? HIGH : LOW);
+  digitalWrite(HEAT_LED_PIN, currentMode == MODE_HEAT ? HIGH : LOW);
+}
+
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   String message;
   message.reserve(length);
   for (unsigned int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
-  desiredFirmware = message;
-  Serial.print("Desired firmware: ");
-  Serial.println(desiredFirmware);
-  checkAndApplyUpdate();
+
+  if (strcmp(topic, topicDesiredFirmware) == 0) {
+    desiredFirmware = message;
+    Serial.print("Desired firmware: ");
+    Serial.println(desiredFirmware);
+    checkAndApplyUpdate();
+  } else if (strcmp(topic, topicDesiredMode) == 0) {
+    if (message == "cool") {
+      currentMode = MODE_COOL;
+    } else if (message == "heat") {
+      currentMode = MODE_HEAT;
+    } else {
+      currentMode = MODE_IDLE;
+    }
+    Serial.print("Desired mode: ");
+    Serial.println(message);
+    updateModeLeds();
+  } else if (strcmp(topic, topicDesiredTemp) == 0) {
+    desiredTemp = message.toFloat();
+    Serial.print("Desired temp: ");
+    Serial.println(desiredTemp);
+  }
 }
 
 void checkAndApplyUpdate() {
@@ -158,9 +192,9 @@ void connectMQTT() {
 
   if (mqttClient.connect(DEVICE_ID)) {
     Serial.println("MQTT connected.");
-    char desiredTopic[64];
-    snprintf(desiredTopic, sizeof(desiredTopic), "devices/%s/twin/desired/firmware", DEVICE_ID);
-    mqttClient.subscribe(desiredTopic);
+    mqttClient.subscribe(topicDesiredFirmware);
+    mqttClient.subscribe(topicDesiredMode);
+    mqttClient.subscribe(topicDesiredTemp);
   } else {
     Serial.print("MQTT connect failed, rc=");
     Serial.println(mqttClient.state());
@@ -194,9 +228,17 @@ void setup() {
 
   u8g2.begin();
 
+  pinMode(COOL_LED_PIN, OUTPUT);
+  pinMode(HEAT_LED_PIN, OUTPUT);
+  updateModeLeds();
+
   connectWiFi();
 
   deriveDeviceId();
+
+  snprintf(topicDesiredFirmware, sizeof(topicDesiredFirmware), "devices/%s/twin/desired/firmware", DEVICE_ID);
+  snprintf(topicDesiredMode, sizeof(topicDesiredMode), "devices/%s/twin/desired/mode", DEVICE_ID);
+  snprintf(topicDesiredTemp, sizeof(topicDesiredTemp), "devices/%s/twin/desired/temp", DEVICE_ID);
 
   mqttClient.setServer(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
   mqttClient.setCallback(onMqttMessage);
