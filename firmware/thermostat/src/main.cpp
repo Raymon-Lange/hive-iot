@@ -12,7 +12,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* 
 
 char deviceId[24] = "thermostat-unset"; // overwritten by deriveDeviceId() once WiFi is up
 const char* DEVICE_ID = deviceId;
-const char* FIRMWARE_VERSION = "0.1.8"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
+const char* FIRMWARE_VERSION = "0.1.9"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -77,7 +77,7 @@ void drawScreen() {
 
   u8g2.setFont(u8g2_font_logisoso24_tf);
   char tempStr[8];
-  snprintf(tempStr, sizeof(tempStr), "%.0fF", currentTemp);
+  snprintf(tempStr, sizeof(tempStr), "%.1fF", currentTemp);
   u8g2.drawStr(20, 45, tempStr);
 
   u8g2.sendBuffer();
