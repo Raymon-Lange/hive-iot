@@ -5,6 +5,7 @@ import TemperatureChart from '../components/TemperatureChart.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
 
 const MODES = ['idle', 'cool', 'heat']
+const SENSOR_MODES = ['sim', 'phy']
 
 export default function DeviceDetail() {
   const { deviceId } = useParams()
@@ -48,6 +49,20 @@ export default function DeviceDetail() {
       const { desired } = await setDesired(deviceId, { mode })
       setTwin((t) => (t ? { ...t, desired } : t))
       setStatus({ type: 'ok', message: `Mode set to ${mode}` })
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSetSensorMode(sensorMode) {
+    setSaving(true)
+    setStatus(null)
+    try {
+      const { desired } = await setDesired(deviceId, { sensorMode })
+      setTwin((t) => (t ? { ...t, desired } : t))
+      setStatus({ type: 'ok', message: `Sensor source set to ${sensorMode.toUpperCase()}` })
     } catch (err) {
       setStatus({ type: 'error', message: err.message })
     } finally {
@@ -126,6 +141,25 @@ export default function DeviceDetail() {
                   className={desired.mode === mode ? 'active' : ''}
                 >
                   {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <div className="muted">
+              Sensor source {desired.sensorMode ? `(desired: ${desired.sensorMode})` : ''}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              {SENSOR_MODES.map((sensorMode) => (
+                <button
+                  key={sensorMode}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleSetSensorMode(sensorMode)}
+                  className={desired.sensorMode === sensorMode ? 'active' : ''}
+                >
+                  {sensorMode.toUpperCase()}
                 </button>
               ))}
             </div>
