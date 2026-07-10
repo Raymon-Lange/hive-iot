@@ -5,13 +5,16 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "secrets.h"
+#ifdef FW_MODE_PHY
+#include <Adafruit_BMP085.h>
+#endif
 
 // IdeaSpark built-in OLED: SDA=GPIO12(D6), SCL=GPIO14(D5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 14, /* data=*/ 12);
 
 char deviceId[24] = "thermostat-unset"; // overwritten by deriveDeviceId() once WiFi is up
 const char* DEVICE_ID = deviceId;
-const char* FIRMWARE_VERSION = "0.1.6"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
+const char* FIRMWARE_VERSION = "0.1.7"; // keep to 0.1.NN — OLED layout in drawScreen() assumes <= 6 chars
 
 String desiredFirmware = "";
 bool otaFailed = false; // set on first failed OTA attempt; stays set until power-cycle
@@ -27,11 +30,17 @@ const float TEMP_START = 70.0;
 const float TEMP_STEP = 1.0;
 const unsigned long STEP_INTERVAL_MS = 60000; // 60 seconds
 
-float simTemp = TEMP_START;
+float currentTemp = TEMP_START;
 int direction = 1;
 unsigned long lastStepTime = 0;
 
+#ifdef FW_MODE_PHY
+const char* MODE_LABEL = "PHY";
+Adafruit_BMP085 bmp;
+bool bmpReady = false;
+#else
 const char* MODE_LABEL = "SIM";
+#endif
 
 const unsigned long WIFI_TIMEOUT_MS = 20000; // give up after 20s
 const unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
@@ -71,7 +80,7 @@ void drawScreen() {
 
   u8g2.setFont(u8g2_font_logisoso24_tf);
   char tempStr[8];
-  snprintf(tempStr, sizeof(tempStr), "%.0fF", simTemp);
+  snprintf(tempStr, sizeof(tempStr), "%.0fF", currentTemp);
   u8g2.drawStr(20, 45, tempStr);
 
   u8g2.sendBuffer();
@@ -201,13 +210,34 @@ void connectMQTT() {
   }
 }
 
+void updateTemperature() {
+#ifdef FW_MODE_PHY
+  if (!bmpReady) {
+    Serial.println("BMP180 not ready, keeping last known temperature");
+    return;
+  }
+  float celsius = bmp.readTemperature();
+  currentTemp = celsius * 9.0 / 5.0 + 32.0;
+#else
+  currentTemp += direction * TEMP_STEP;
+
+  if (currentTemp >= TEMP_MAX) {
+    currentTemp = TEMP_MAX;
+    direction = -1;
+  } else if (currentTemp <= TEMP_MIN) {
+    currentTemp = TEMP_MIN;
+    direction = 1;
+  }
+#endif
+}
+
 void publishTelemetry(unsigned long uptimeMs) {
   if (!mqttClient.connected()) return;
 
   char payload[192];
   snprintf(payload, sizeof(payload),
            "{\"deviceId\":\"%s\",\"temperature\":%.1f,\"uptime\":%lu,\"firmware\":\"%s\",\"rssi\":%d}",
-           DEVICE_ID, simTemp, uptimeMs, FIRMWARE_VERSION, WiFi.RSSI());
+           DEVICE_ID, currentTemp, uptimeMs, FIRMWARE_VERSION, WiFi.RSSI());
 
   char topic[48];
   snprintf(topic, sizeof(topic), "devices/%s/telemetry", DEVICE_ID);
@@ -222,11 +252,20 @@ void setup() {
   delay(100);
   Serial.println();
   Serial.println("=== BOOT ===");
-  Serial.println("Thermostat firmware boot OK (SIMULATION MODE)");
+  Serial.print("Thermostat firmware boot OK (");
+  Serial.print(MODE_LABEL);
+  Serial.println(" MODE)");
   Serial.print("Starting temp: ");
-  Serial.println(simTemp);
+  Serial.println(currentTemp);
 
   u8g2.begin();
+
+#ifdef FW_MODE_PHY
+  bmpReady = bmp.begin();
+  if (!bmpReady) {
+    Serial.println("BMP180 not detected on I2C bus.");
+  }
+#endif
 
   pinMode(COOL_LED_PIN, OUTPUT);
   pinMode(HEAT_LED_PIN, OUTPUT);
@@ -274,18 +313,11 @@ void loop() {
   if (now - lastStepTime >= STEP_INTERVAL_MS) {
     lastStepTime = now;
 
-    simTemp += direction * TEMP_STEP;
+    updateTemperature();
 
-    if (simTemp >= TEMP_MAX) {
-      simTemp = TEMP_MAX;
-      direction = -1;
-    } else if (simTemp <= TEMP_MIN) {
-      simTemp = TEMP_MIN;
-      direction = 1;
-    }
-
-    Serial.print("Simulated temp: ");
-    Serial.print(simTemp);
+    Serial.print(MODE_LABEL);
+    Serial.print(" temp: ");
+    Serial.print(currentTemp);
     Serial.print(" F  (uptime ms: ");
     Serial.print(now);
     Serial.println(")");
