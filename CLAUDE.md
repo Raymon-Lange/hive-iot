@@ -31,7 +31,7 @@ for the MVP — full design already written up in that doc's Step 6-7.
   working end-to-end on physical hardware — sensor detected, real readings
   published. ESP8266 connects to Wi-Fi, shows status on OLED, publishes
   temperature to `devices/{deviceId}/telemetry` every 60s, including its
-  `FIRMWARE_VERSION` (currently `"0.1.8"`), uptime, and RSSI. Plaintext MQTT
+  `FIRMWARE_VERSION` (currently `"0.1.9"`), uptime, and RSSI. Plaintext MQTT
   (no TLS/cert auth yet — Epic 1 deferred). Device also subscribes to
   `devices/{deviceId}/twin/desired/firmware`
   and, on a version mismatch, downloads and flashes the new binary via
