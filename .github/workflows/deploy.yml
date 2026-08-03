@@ -1,0 +1,85 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [master]
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/raymon-lange/hive-iot-api
+  DASHBOARD_IMAGE: ghcr.io/raymon-lange/hive-iot-dashboard
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push api image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/api
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push dashboard image
+        uses: docker/build-push-action@v6
+        with:
+          context: dashboard
+          push: true
+          # VITE_API_URL is baked into the browser bundle at build time —
+          # set this as a repo variable (Settings > Actions > Variables)
+          # matching the real deployed API URL before relying on this job.
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+          tags: |
+            ${{ env.DASHBOARD_IMAGE }}:latest
+            ${{ env.DASHBOARD_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,scripts/"
+          target: /home/deploy/hive-iot
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/deploy/hive-iot
+            bash scripts/deploy.sh

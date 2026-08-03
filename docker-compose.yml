@@ -1,0 +1,79 @@
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.18
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "1883:1883"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 1883 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ./services/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./data/mosquitto/data:/mosquitto/data
+      - ./data/mosquitto/log:/mosquitto/log
+    networks:
+      - frontend
+
+  api:
+    image: ghcr.io/raymon-lange/hive-iot-api:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8010:8000"
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ./data/api:/app/data
+    networks:
+      - frontend
+
+  dashboard:
+    image: ghcr.io/raymon-lange/hive-iot-dashboard:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    external: true
+  backend:
+    external: true

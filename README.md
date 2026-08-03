@@ -206,3 +206,82 @@ same build can be flashed to any number of physical units.
 | `certificates/` | CA/device certs for MQTT TLS auth (not yet in use) |
 | `docker/` | Docker Compose setup for the broker, API, and dashboard |
 | `scripts/` | Helper scripts (cert generation, device simulation, local setup) |
+
+---
+
+## Deploy
+
+hive-ops standard deploy flow — this targets the hive lab, not local dev
+(for local dev, see [Running it](#running-it) above).
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/Raymon-Lange/hive-iot.git /home/deploy/hive-iot
+cd /home/deploy/hive-iot
+
+# 2. Copy and configure environment
+cp .env.example .env
+nano .env   # fill in APP_DOMAIN and any other values
+
+# 3. Deploy
+bash scripts/deploy.sh
+```
+
+`docker-compose.yml` at the repo root is the production compose file —
+`docker/docker-compose.dev.yml` is the separate, local-dev-only file (see
+`scripts/setup-dev.sh` under `docker/`).
+
+## Environment variables
+
+See `.env.example` for the full list with descriptions.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `APP_NAME` | Yes | — | App identifier; controls container name prefix |
+| `APP_DOMAIN` | Yes | — | Public/LAN domain the app is served from |
+| `COMPOSE_PROJECT_NAME` | Yes | `${APP_NAME}` | Controls Docker container name prefix |
+| `STORAGE_MODE` | Yes | `local` | Storage backend mode |
+| `STORAGE_PATH` | Yes | `/home/deploy` | Base path for persistent data |
+| `TZ` | Yes | `UTC` | Timezone for all services |
+| `MQTT_BROKER_HOST` | Yes | `mosquitto` | Hostname of the Mosquitto broker, as seen by the `api` container |
+| `MQTT_BROKER_PORT` | Yes | `1883` | Port the Mosquitto broker listens on |
+| `HIVE_DB_PATH` | Yes | `/app/data/hive_iot.db` | SQLite file path inside the `api` container |
+| `VITE_API_URL` | Yes | — | Base URL the dashboard's browser bundle uses to reach the API; baked in at CI build time (GitHub Actions repo variable), not read at container runtime |
+
+## Backup and restore
+
+```bash
+# Run a backup
+bash scripts/backup.sh
+
+# Restore from backup
+bash scripts/restore.sh
+```
+
+`scripts/backup.sh` and `scripts/restore.sh` are hive-ops Phase 4
+placeholders — they currently print a message and no-op (see
+`hive-ops/standards/08-backups.md`). Until that lands, back up manually by
+copying `data/` and `.env` off the LXC.
+
+## Troubleshoot
+
+```bash
+# Check container health
+bash scripts/healthcheck.sh
+
+# View recent logs
+docker compose logs --tail 50 api
+
+# Follow logs live
+docker compose logs -f
+
+# Enter the api container
+docker exec -it hive-iot-api sh
+
+# Restart a single service
+docker compose restart api
+```
+
+For device/firmware-specific issues (Wi-Fi, OLED wiring, OTA retries), see
+[Troubleshooting](#troubleshooting) above — this section covers
+container/ops-level issues only.
