@@ -48,3 +48,23 @@ export function uploadFirmware(version, file) {
   formData.append('file', file)
   return request('/firmware', { method: 'POST', body: formData })
 }
+
+export function listRollouts() {
+  return request('/rollouts')
+}
+
+export function getRollout(rolloutId) {
+  return request(`/rollouts/${rolloutId}`)
+}
+
+export function createRollout(firmwareVersion, deviceIds, bakeMinutes) {
+  return request('/rollouts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ firmwareVersion, deviceIds, bakeMinutes }),
+  })
+}
+
+export function promoteRollout(rolloutId) {
+  return request(`/rollouts/${rolloutId}/promote`, { method: 'POST' })
+}

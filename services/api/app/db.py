@@ -56,5 +56,29 @@ def init_db() -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS rollouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            firmware_version TEXT NOT NULL,
+            bake_minutes INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'baking',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS rollout_devices (
+            rollout_id INTEGER NOT NULL REFERENCES rollouts(id),
+            device_id TEXT NOT NULL,
+            previous_version TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            updated_at TEXT,
+            reverted_at TEXT,
+            PRIMARY KEY (rollout_id, device_id)
+        )
+        """
+    )
     conn.commit()
     conn.close()
