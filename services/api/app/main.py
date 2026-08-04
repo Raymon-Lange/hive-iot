@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -117,8 +117,8 @@ def read_twin(device_id: str):
 
 
 @app.get("/devices/{device_id}/telemetry")
-def read_telemetry(device_id: str, limit: int = 100):
-    return get_telemetry_history(device_id, limit)
+def read_telemetry(device_id: str, range: Literal["24h", "7d"] = "24h"):
+    return get_telemetry_history(device_id, range)
 
 
 @app.post("/devices/{device_id}/desired")

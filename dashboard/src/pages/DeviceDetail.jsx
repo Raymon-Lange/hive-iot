@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getTelemetry, getTwin, setDesired } from '../api.js'
 import TemperatureChart from '../components/TemperatureChart.jsx'
+import ReportingRangeToggle from '../components/ReportingRangeToggle.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
 
 const MODES = ['idle', 'cool', 'heat']
@@ -11,6 +12,7 @@ export default function DeviceDetail() {
   const { deviceId } = useParams()
   const [twin, setTwin] = useState(null)
   const [telemetry, setTelemetry] = useState(null)
+  const [range, setRange] = useState('24h')
   const [error, setError] = useState(null)
   const [tempInput, setTempInput] = useState('')
   const [status, setStatus] = useState(null)
@@ -23,7 +25,7 @@ export default function DeviceDetail() {
       try {
         const [twinData, telemetryData] = await Promise.all([
           getTwin(deviceId),
-          getTelemetry(deviceId, 50),
+          getTelemetry(deviceId, range),
         ])
         if (!cancelled) {
           setTwin(twinData)
@@ -40,7 +42,7 @@ export default function DeviceDetail() {
       cancelled = true
       clearInterval(interval)
     }
-  }, [deviceId])
+  }, [deviceId, range])
 
   async function handleSetMode(mode) {
     setSaving(true)
@@ -123,6 +125,9 @@ export default function DeviceDetail() {
       </div>
 
       <div style={{ marginTop: 16 }}>
+        <div style={{ marginBottom: 8 }}>
+          <ReportingRangeToggle value={range} onChange={setRange} />
+        </div>
         <TemperatureChart data={telemetry} />
       </div>
 
