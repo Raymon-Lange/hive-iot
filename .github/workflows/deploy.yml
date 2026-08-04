@@ -71,7 +71,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,scripts/"
+          source: "docker-compose.yml,scripts/,services/mqtt/mosquitto.conf"
           target: /home/deploy/hive-iot
 
       - name: Deploy via SSH
