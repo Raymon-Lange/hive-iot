@@ -117,7 +117,7 @@ def read_twin(device_id: str):
 
 
 @app.get("/devices/{device_id}/telemetry")
-def read_telemetry(device_id: str, range: Literal["24h", "7d"] = "24h"):
+def read_telemetry(device_id: str, range: Literal["1h", "24h", "7d"] = "1h"):
     return get_telemetry_history(device_id, range)
 
 

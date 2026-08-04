@@ -12,7 +12,7 @@ export default function DeviceDetail() {
   const { deviceId } = useParams()
   const [twin, setTwin] = useState(null)
   const [telemetry, setTelemetry] = useState(null)
-  const [range, setRange] = useState('24h')
+  const [range, setRange] = useState('1h')
   const [error, setError] = useState(null)
   const [tempInput, setTempInput] = useState('')
   const [status, setStatus] = useState(null)

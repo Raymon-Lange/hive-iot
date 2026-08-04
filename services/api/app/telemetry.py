@@ -3,13 +3,13 @@ from typing import Literal
 
 from .db import get_connection
 
-_RANGE_DELTAS = {"24h": timedelta(hours=24), "7d": timedelta(days=7)}
+_RANGE_DELTAS = {"1h": timedelta(hours=1), "24h": timedelta(hours=24), "7d": timedelta(days=7)}
 
 
-def get_telemetry_history(device_id: str, range: Literal["24h", "7d"] = "24h") -> list[dict]:
+def get_telemetry_history(device_id: str, range: Literal["1h", "24h", "7d"] = "1h") -> list[dict]:
     since = (datetime.utcnow() - _RANGE_DELTAS[range]).strftime("%Y-%m-%d %H:%M:%S")
     conn = get_connection()
-    if range == "24h":
+    if range in ("1h", "24h"):
         rows = conn.execute(
             """
             SELECT temperature, rssi, uptime, timestamp

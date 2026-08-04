@@ -26,7 +26,7 @@ export function getTwin(deviceId) {
   return request(`/devices/${deviceId}/twin`)
 }
 
-export function getTelemetry(deviceId, range = '24h') {
+export function getTelemetry(deviceId, range = '1h') {
   return request(`/devices/${deviceId}/telemetry?range=${range}`)
 }
 

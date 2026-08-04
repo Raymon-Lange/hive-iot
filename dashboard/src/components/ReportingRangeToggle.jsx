@@ -1,4 +1,5 @@
 const RANGES = [
+  { value: '1h', label: 'Last Hour' },
   { value: '24h', label: '24 Hours' },
   { value: '7d', label: 'Full Week' },
 ]
