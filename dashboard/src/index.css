@@ -232,6 +232,39 @@ a {
   transform: translateY(-2px);
 }
 
+@media (max-width: 600px) {
+  .device-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .device-row {
+    aspect-ratio: unset;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 16px;
+    padding: 16px;
+  }
+
+  .device-row > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .device-row > div:last-child {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .device-row .temp {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    font-size: 2.75rem;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
